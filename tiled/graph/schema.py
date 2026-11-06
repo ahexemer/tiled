@@ -364,19 +364,30 @@ class Query:
             return None
         return _entity_from_record(record, await _namespaces(info))
 
-    @strawberry.field
+    @strawberry.field(
+        description=(
+            "List entities, optionally filtered by entity_type, by exact uri, "
+            "and/or by the catalog node id they point to (nodeId). Filters "
+            "combine with AND and are applied, with access control, before "
+            "limit/offset."
+        )
+    )
     async def entities(
         self,
         info: Info,
         entity_type: Optional[str] = None,
         limit: int = 100,
         offset: int = 0,
+        uri: Optional[str] = None,
+        node_id: Optional[int] = None,
     ) -> list[Entity]:
         access_filters = await _policy_access_filters(info, "read:metadata")
         if access_filters is NO_ACCESS:
             return []
         records = await _store(info).list_entities(
             entity_type=entity_type,
+            uri=uri,
+            node_id=node_id,
             limit=limit,
             offset=offset,
             access_filters=access_filters or None,
